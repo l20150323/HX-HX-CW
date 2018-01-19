@@ -1,0 +1,259 @@
+#c
+#include "han-xi-hao-xin-hua-wei.c"
+c#
+
+hanXi:
+	(), (hanXi())
+
+allReset:
+	(b41=1), (clearY(), z->0)
+	(z-stop), (z-reset@p42)
+	(z-stop), (x->0, y->0, a->0, b->0)
+	(x-stop, y-stop, a-stop, b-stop), (x-reset@p40, y-reset@p41, a-reset@p43, b-reset@p41)
+	(x-stop, y-stop, a-stop, b-stop), (b41=0, b42=1)
+
+//--------------------------------------------------------------------------------------
+// 按键动作
+
+stopKey:
+	(x0=0), ()
+	(x0=1), (b7=1)
+
+pauseKey:
+	(x1=0), ()
+	(x1=1), (b8=1)
+
+startKey0:
+	(x2=0@50), ()
+	(x2=1@50), (b5=1)
+
+startKey1:
+	(x3=0), ()
+	(x3=1), (b6=1)
+
+resetKey:
+	(x4=0), (b9=0)
+	(x4=1), (b9=1)
+
+sendSn: // 送锡
+	(x13=0), (c-stop)
+	(x13=1, b3=0, b4=0, c-stop), (c>>999@p34)
+sendSn: // 退锡
+	(x14=0), (c-stop)
+	(x14=1, b3=0, b4=0, c-stop), (c>>-999@p35)
+
+clean: // 清洗烙铁
+	(x10=0), (b10=0)
+	(x10=1), (b10=1)
+
+// 报警
+#alarm
+	y0/x11=0@1/x11=0@1/100 // 缺锡
+	y0/x12=0@2/x12=0@2/100 // 卡锡
+alarm#
+
+//---------------------------------------------------------
+// 指令运行
+
+// 测温
+	run:
+		(b16=1, b17=0), (z->0) // z先上去
+		(z-stop), (x->p1, y->p2) // x,y到位
+		(x-stop, y-stop), (z->p3, y15=1), (y-stop) // z下来,气缸下来
+		(), (sleep-500) // 气缸下来时间,0.5s
+		(x20=0, x21=0), (), (), (b33=1), (x20=0, x21=0) // 如果有温度报警,启动b33
+		(), (z->0, y15=0, b33=0), (z-stop) // z上去,气缸上去,报警取消
+		(), (sleep-500) // 气缸上去时间,0.5s
+		(), (b17=1) // 测温完成
+	run: // 温度报警
+		(b33=1), (sleep-1000) // 滞后1s
+		(b33=1), (y16=1), (b33=0), () // 再次检测报警位,确定是否报警输出
+		(), (y16=0) // 关报警
+
+moveToL: // 0,运行到
+	(b3=1, p0=3), ()
+	(), (x->p1@p5, y->p2@p5, z->p3@p5, a->p4@p5), (x-stop, y-stop, z-stop, a-stop)
+	(), (b3=0)
+moveToR:
+	(b4=1, p0=3), ()
+	(), (x->p1@p5, b->p2@p5, z->p3@p5, a->p4@p5), (x-stop, b-stop, z-stop, a-stop)
+	(), (b4=0)
+
+dianHanX1:
+	(b38=1), ()
+	(b13=1), (c>>p7@p6), (c-stop), ()
+	(b13=1), (c>>0-p9@p8), (c-stop), ()
+	(), (b38=0)
+dianHanX2:
+	(b39=1), ()
+	(b13=1), (c>>p12@p11), (c-stop), ()
+	(b13=1), (c>>0-p14@p13), (c-stop), ()
+	(), (b39=0)
+dianHanX3:
+	(b40=1), ()
+	(b13=1), (c>>p17@p16), (c-stop), ()
+	(b13=1), (c>>0-p19@p18), (c-stop), ()
+	(), (b40=0)
+dianHanL: // 1,点焊
+	(b3=1, p0=4), (x->p1+p22@p5, y->p2+p23@p5, a->p4@p5), (x-stop, y-stop, a-stop)
+	(), (b38=1)
+	(), ((z->p3+p21@p5), (x->p1@p24, y->p2@p24, z->p3@p24))
+	(inp-stop, b38=0), (sleep-p10*1000)
+	(), (b39=1), (b39=0)
+	(), (sleep-p15*1000)
+	(), (b40=1), (b40=0)
+	(), (sleep-p20*1000)
+	(p25=0), (z->p3+p26@p5), (z-stop), ((x->p1+p22@p24, y->p2+p23@p24, z->p3+p21@p24), (z->p3+p26@p5)), (inp-stop)
+	(), (p36=p36+1, b3=0)
+dianHanR:
+	(b4=1, p0=4), (x->p1+p22@p5, b->p2+p23@p5, a->p4@p5), (x-stop, b-stop, a-stop)
+	(), (b38=1)
+	(), ((z->p3+p21@p5), (x->p1@p24, b->p2@p24, z->p3@p24))
+	(inp-stop, b38=0), (sleep-p10*1000)
+	(), (b39=1), (b39=0)
+	(), (sleep-p15*1000)
+	(), (b40=1), (b40=0)
+	(), (sleep-p20*1000)
+	(p25=0), (z->p3+p26@p5), (z-stop), ((x->p1+p22@p24, b->p2+p23@p24, z->p3+p21@p24), (z->p3+p26@p5)), (inp-stop)
+	(), (p36=p36+1, b4=0)
+
+tuoHanStartL: // 2,拖焊起点
+	(b3=1, p0=5), (x->p1+p12@p5, y->p2+p13@p5, a->p4@p5), (x-stop, y-stop, a-stop)
+	(), (b38=1)
+	(), ((z->p3+p11@p5), (x->p1@p14, y->p2@p14, z->p3@p14))
+	(inp-stop, b38=0), (sleep-p10*1000)
+	(), (b3=0)
+tuoHanStartR:
+	(b4=1, p0=5), (x->p1+p12@p5, b->p2+p13@p5, a->p4@p5), (x-stop, b-stop, a-stop)
+	(), (b38=1)
+	(), ((z->p3+p11@p5), (x->p1@p14, b->p2@p14, z->p3@p14))
+	(inp-stop, b38=0), (sleep-p10*1000)
+	(), (b4=0)
+
+tuoHanL: // 3,拖焊
+	(b3=1, p0=6), ()
+	(b13=1), (c>>9999@p6), (), ()
+	(), (x->p1@p5, y->p2@p5, z->p3@p5, a->p4@p5), (x-stop, y-stop, z-stop, a-stop)
+	(b13=1), (c-stop), (c-stop), ()
+	(), (b3=0)
+tuoHanR:
+	(b4=1, p0=6), ()
+	(b13=1), (c>>9999@p6), (), ()
+	(), (x->p1@p5, b->p2@p5, z->p3@p5, a->p4@p5), (x-stop, b-stop, z-stop, a-stop)
+	(b13=1), (c-stop), (c-stop)
+	(), (b4=0)
+
+tuoHanEndL: // 4,拖焊终点
+	(b3=1, p0=7), ()
+	(b13=1), (c>>9999@p6), (), ()
+	(), (x->p1@p5, y->p2@p5, z->p3@p5, a->p4@p5)
+	((x-p1)*(x-p1)+(y-p2)*(y-p2)<0.01 || (x-p1)*(x-p1)+(y-p2)*(y-p2)<p7*p7), (c-stop), (c-stop)
+	(b13=1), (c>>9999@p8), (), ()
+	(x-stop, y-stop, z-stop, a-stop), (c-stop), (c-stop)
+	(), (sleep-p9*1000)
+	(), ((x->p1+p11@p13, y->p2+p12@p13, z->p3+p10@p13), (z->p3+p14@p15))
+	(inp-stop), (p36=p36+1, b3=0)
+tuoHanEndR:
+	(b4=1, p0=7), ()
+	(b13=1), (c>>9999@p6), (), ()
+	(), (x->p1@p5, b->p2@p5, z->p3@p5, a->p4@p5)
+	((x-p1)*(x-p1)+(b-p2)*(b-p2)<0.01 || (x-p1)*(x-p1)+(b-p2)*(b-p2)<p7*p7), (c-stop), (c-stop)
+	(b13=1), (c>>9999@p8), (), ()
+	(x-stop, b-stop, z-stop, a-stop), (c-stop), (c-stop)
+	(), (sleep-p9*1000)
+	(), ((x->p1+p11@p13, b->p2+p12@p13, z->p3+p10@p13), (z->p3+p14@p15))
+	(inp-stop), (p36=p36+1, b4=0)
+
+motorResetL: // 5,电机复位
+	(b3=1, p0=10), (p10=z, z-reset), (z-stop)
+	(p1=0), (), (), (x-reset)
+	(p2=0), (), (), (y-reset)
+	(p4=0), (), (), (a-reset)
+	(x-stop, y-stop, a-stop), ()
+	(p3=0), (z->p10), (z-stop), ()
+	(), (b3=0)
+motorResetR:
+	(b4=1, p0=10), (p10=z, z-reset), (z-stop)
+	(p1=0), (), (), (x-reset)
+	(p2=0), (), (), (b-reset)
+	(p4=0), (), (), (a-reset)
+	(x-stop, b-stop, a-stop), ()
+	(p3=0), (z->p10), (z-stop), ()
+	(), (b4=0)
+
+cleanL: // 6,清洗烙铁
+	(b3=1, p0=11), ()
+	(b42=0), (b41=1), (b41=0), ()
+	(), ((z->0@p5), (x->p1@p5, y->p6@p5, a->p3@p5, b->p6@p5), (z->p2@p5))
+	(inp-stop), (y5=1, sleep-p4*1000)
+	(), (y5=0, z->0@p5), (z-stop)
+	(), (b3=0)
+cleanR:
+	(b4=1, p0=11), ()
+	(b42=0), (b41=1), (b41=0), ()
+	(), ((z->0@p5), (x->p1@p5, y->p6@p5, a->p3@p5, b->p6@p5), (z->p2@p5))
+	(inp-stop), (y5=1, sleep-p4*1000)
+	(), (y5=0, z->0@p5), (z-stop)
+	(), (b4=0)
+
+delayL: // 7,延时等待
+	(b3=1, p0=14), (sleep-1000 * p1)
+	(), (b3=0)
+delayR:
+	(b4=1, p0=14), (sleep-1000 * p1)
+	(), (b4=0)
+
+userSetOutputL: // 9,端口输出
+	(b3=1, p0=9), (userSetOutput())
+	(), (b3=0)
+userSetOutputR:
+	(b4=1, p0=9), (userSetOutput())
+	(), (b4=0)
+
+userWaitInputL: // 10,等待输入
+	(b3=1, p0=8), (), (userWaitInput()=1)
+	(), (b3=0)
+userWaitInputR:
+	(b4=1, p0=8), (), (userWaitInput()=1)
+	(), (b4=0)
+
+stopPosL: // 23,回停止位
+	(b3=1, p0=23), ((z->0), (x->p1, y->p2, a->p4), (z->p3))
+	(inp-stop), (b3=0)
+stopPosR:
+	(b4=1, p0=23), ((z->0), (x->p1, b->p2, a->p4), (z->p3))
+	(inp-stop), (b4=0)
+
+//------------------------------------------------------------------------
+// 定位指令
+moveToL: // 0,运行到
+	(b11=1, p0=3), ((z->0), (x->p1@p5, y->p2@p5, a->p4@p5), (z->p3@p5))
+	(inp-stop), (b11=0)
+moveToR:
+	(b12=1, p0=3), ((z->0), (x->p1@p5, b->p2@p5, a->p4@p5), (z->p3@p5))
+	(inp-stop), (b12=0)
+dianHanL: // 1,点焊
+	(b11=1, p0=4), ((z->0), (x->p1+p22@p5, y->p2+p23@p5, a->p4@p5), (z->p3+p21@p5), (x->p1@p24, y->p2@p24, z->p3@p24))
+	(inp-stop), (b11=0)
+dianHanR:
+	(b12=1, p0=4), ((z->0), (x->p1+p22@p5, b->p2+p23@p5, a->p4@p5), (z->p3+p21@p5), (x->p1@p24, b->p2@p24, z->p3@p24))
+	(inp-stop), (b12=0)
+tuoHanStartL: // 2,拖焊起点
+	(b11=1, p0=5), ((z->0), (x->p1+p12@p5, y->p2+p13@p5, a->p4@p5), (z->p3+p11@p5), (x->p1@p14, y->p2@p14, z->p3@p14))
+	(inp-stop), (b11=0)
+tuoHanStartR:
+	(b12=1, p0=5), ((z->0), (x->p1+p12@p5, b->p2+p13@p5, a->p4@p5), (z->p3+p11@p5), (x->p1@p14, b->p2@p14, z->p3@p14))
+	(inp-stop), (b12=0)
+tuoHanL: // 3,拖焊
+	(b11=1, p0=6), ((z->0), (x->p1@p5, y->p2@p5, a->p4@p5), (z->p3@p5))
+	(inp-stop), (b11=0)
+tuoHanR:
+	(b12=1, p0=6), ((z->0), (x->p1@p5, b->p2@p5, a->p4@p5), (z->p3@p5))
+	(inp-stop), (b12=0)
+tuoHanEndL: // 4,拖焊终点
+	(b11=1, p0=7), ((z->0), (x->p1, y->p2, a->p4), (z->p3))
+	(inp-stop), (b11=0)
+tuoHanEndR:
+	(b12=1, p0=7), ((z->0), (x->p1, b->p2, a->p4), (z->p3))
+	(inp-stop), (b12=0)
+//------------------------------------------------------------------------
