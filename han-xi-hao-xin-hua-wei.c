@@ -1,3 +1,7 @@
+/*
+深圳锦超科技有限公司
+*/
+
 #include "stm32f4xx_hal.h"
 #include "types.h"
 #include "lio.h"

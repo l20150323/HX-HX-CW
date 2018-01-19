@@ -1,3 +1,8 @@
+/*
+深圳锦超科技有限公司
+SPC脚本
+*/
+
 #c
 #include "han-xi-hao-xin-hua-wei.c"
 c#
